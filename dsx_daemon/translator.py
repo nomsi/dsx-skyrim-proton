@@ -139,7 +139,7 @@ def translate_trigger_update(inst: Instruction) -> list[list[str]]:
 
 
 def _translate_custom_trigger_value(
-    side: str, extra: list[str]
+        side: str, extra: list[str]
 ) -> list[list[str]]:
     """Parameters: [customTriggerValueMode, p0, p1]"""
     cv_mode = int(extra[0]) if extra else 0
