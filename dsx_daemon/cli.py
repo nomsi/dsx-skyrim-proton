@@ -6,15 +6,12 @@ from typing import Any
 try:
     import tomllib
 except ImportError:
-    import tomli as tomllib  # type: ignore[no-redef]
+    import tomli as tomllib  # type: ignore[import-not-found, no-redef]
 
 from dsx_daemon.dualsense import DualSenseCtl
 from dsx_daemon.server import run_server
 
 log = logging.getLogger("dsx-daemon")
-
-CONFIG_PATH = Path("dsx-daemon.toml")
-
 
 def _load_config(path: Path) -> dict[str, Any]:
     try:
@@ -27,8 +24,8 @@ def _load_config(path: Path) -> dict[str, Any]:
         return {}
 
 
-def _apply_config(parser: argparse.ArgumentParser) -> None:
-    cfg = _load_config(CONFIG_PATH).get("daemon", {})
+def _apply_config(parser: argparse.ArgumentParser, path: Path) -> None:
+    cfg = _load_config(path).get("daemon", {})
     overrides = {}
     if "bind" in cfg:
         overrides["bind"] = cfg["bind"]
@@ -54,19 +51,23 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Log commands without executing")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Verbose logging")
+    parser.add_argument("-c", "--config", metavar="PATH", default="dsx-daemon.toml",
+                        help="Config file path (default: dsx-daemon.toml)")
     return parser
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
-    _apply_config(parser)
-    args = parser.parse_args(argv)
+    args, _ = parser.parse_known_args(argv)
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         datefmt="%H:%M:%S",
     )
+
+    _apply_config(parser, Path(args.config))
+    args = parser.parse_args(argv)
 
     log.info("starting (bind=%s:%d, dry_run=%s)", args.bind, args.port, args.dry_run)
     dsctl = DualSenseCtl(serial=args.device, dry_run=args.dry_run)
