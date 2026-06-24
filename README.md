@@ -1,3 +1,5 @@
+### Mirrored from my personal [forgejo instance](https://git.nomsy.space/emi/dsxskyrim). I just wanted to push on GitHub for those who use github
+
 # Skyrim Linux DualSense Haptics
 
 Linux-native DualSense haptic feedback for Skyrim Anniversary Edition
@@ -50,7 +52,7 @@ dsx_daemon/
 
 ## Install
 
-### dualsensectl
+### [dualsensectl](https://github.com/nowrep/dualsensectl)
 
 ```bash
 git clone https://github.com/nowrep/dualsensectl.git
@@ -59,11 +61,11 @@ meson setup build && ninja -C build && sudo ninja -C build install
 dualsensectl battery          # verify
 ```
 
-### DSXSkyrim-NG
+### [DSXSkyrim-NG](https://www.nexusmods.com/skyrimspecialedition/mods/66165)
 
 Use your mod manager to install `DSXSkyrimNG.7z` like any other SKSE
 plugin.  The relevant files end up in
-`Data/SKSE/Plugins/DSXSkyrim/`.
+`Data/SKSE/Plugins/DSXSkyrim/`. Make sure to endorse them!
 
 ### Run
 
@@ -110,4 +112,7 @@ file).
 Copy `DSXSkyrimConfig.example.json` from this repo into the DSXSkyrim
 plugin folder as `DSXSkyrimConfig.json` and tweak the trigger modes
 to your liking.  The full fields reference is in the
-[config docs](https://github.com/dvize/DSXSkyrim-NG/blob/master/DSXSkyrimConfigDocumentation.html).
+[DSXSkyrim-NG config docs](https://github.com/dvize/DSXSkyrim-NG/blob/master/DSXSkyrimConfigDocumentation.html).
+
+
+#### Thanks! with <3, emi
