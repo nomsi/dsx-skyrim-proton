@@ -52,5 +52,6 @@ class DualSenseCtl:
                 ["trigger", "right", "off"],
                 ["lightbar", "0", "0", "0", "0"],
                 ["player-leds", "0"],
+                ["microphone-led", "off"],
             ]
         )
