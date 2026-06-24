@@ -1,8 +1,10 @@
 # Skyrim Linux DualSense Haptics
 
-**Linux-native DualSense haptic feedback for Skyrim Anniversary Edition (Proton).**
-
-Replaces the closed-source Windows app **DSX (DualSenseX)** with a lightweight Python daemon that translates UDP packets from [DSXSkyrim-NG](https://github.com/dvize/DSXSkyrim-NG) (running inside the game under Proton) into [`dualsensectl`](https://github.com/nowrep/dualsensectl) commands.
+Linux-native DualSense haptic feedback for Skyrim Anniversary Edition
+running under Proton.  Replaces the Windows-only DSX (DualSenseX) with
+a Python daemon that translates UDP packets from
+[DSXSkyrim-NG](https://github.com/dvize/DSXSkyrim-NG) into
+[dualsensectl](https://github.com/nowrep/dualsensectl) commands.
 
 ## How it works
 
@@ -13,104 +15,78 @@ Skyrim AE (Proton/Wine)
                         │
                     [ Linux host ]
                         │
-              dsx-daemon.py (this project)
+              dsx-daemon.py
                     │
               dualsensectl
                     │
               DualSense controller (USB/BT)
 ```
 
-The SKSE plugin detects item equips in Skyrim and sends JSON packets describing the desired trigger effects over UDP. On Windows, DSX receives these and talks to the controller. On Linux, `dsx-daemon.py` receives them and runs `dualsensectl` instead.
+The SKSE plugin sends JSON packets over UDP when you equip items.
+On Windows, DSX handles them.  On Linux, `dsx-daemon.py` listens on
+port 6969 and runs `dualsensectl` instead.
 
 ## Project structure
 
 ```
-dsx-daemon.py          # Entry-point shim
-dsx-daemon.toml        # User configuration
+dsx-daemon.py          # entry point
+dsx-daemon.toml        # config
 dsx_daemon/
-  __init__.py          # Package version
-  __main__.py          # python -m dsx_daemon support
-  packet.py            # DSX protocol data models (enums, dataclasses)
-  dualsense.py         # DualSenseCtl wrapper around dualsensectl binary
-  translator.py        # DSX mode to dualsensectl command mapping
+  packet.py            # protocol types
+  dualsense.py         # dualsensectl wrapper
+  translator.py        # DSX mode -> dualsensectl mapping
   server.py            # UDP receive loop
-  cli.py               # Argument parsing and main entry point
+  cli.py               # arg parsing + main
 ```
 
 ## Requirements
 
-- **Skyrim Anniversary Edition** (or SE) running under **Proton** (or Wine)
-- **SKSE64** + Address Library for your Skyrim version
-- **DSXSkyrim-NG.7z** from the [DSXSkyrim-NG releases](https://github.com/dvize/DSXSkyrim-NG/releases)
-- **dualsensectl** — install from your distro or build from [source](https://github.com/nowrep/dualsensectl)
-- **Python 3.10+**
-- **DualSense controller** (PS5) — connected via USB or Bluetooth
+- Skyrim Anniversary Edition (or SE) under Proton/Wine
+- SKSE64 + Address Library
+- DSXSkyrim-NG (install in `Data/SKSE/Plugins/DSXSkyrim/`)
+- [dualsensectl](https://github.com/nowrep/dualsensectl) on PATH
+- Python 3.10+
+- DualSense controller (USB or Bluetooth)
 
-## Installation
+## Install
 
-### 1. Install dualsensectl
+### dualsensectl
 
 ```bash
-# From source:
 git clone https://github.com/nowrep/dualsensectl.git
 cd dualsensectl
 meson setup build && ninja -C build && sudo ninja -C build install
+dualsensectl battery          # verify
 ```
 
-Verify it works:
-```bash
-dualsensectl battery
-```
+### DSXSkyrim-NG
 
-### 2. Install DSXSkyrim-NG for Skyrim
-
-Extract `DSXSkyrimNG.7z` into your Skyrim `Data` directory. The file layout inside Proton's wine prefix should look like:
+Extract `DSXSkyrimNG.7z` into the game's `Data` directory.
+Expected layout:
 
 ```
-"<pfx>/drive_c/Program Files (x86)/Steam/steamapps/common/Skyrim Anniversary Edition/Data/SKSE/Plugins/DSXSkyrim/"
+<pfx>/drive_c/.../Skyrim Anniversary Edition/Data/SKSE/Plugins/DSXSkyrim/
   ├── DSXSkyrimNG.dll
   └── DSXSkyrim/DSXSkyrimConfig.json
 ```
 
-### 3. Run the daemon
+### Run
 
 ```bash
-# Start before launching the game:
-python3 dsx-daemon.py
-
-# With verbose logging:
-python3 dsx-daemon.py -v
-
-# Or via python -m:
-python3 -m dsx_daemon
-
-# If you have multiple controllers, specify by serial:
-dualsensectl -l                     # list devices
-python3 dsx-daemon.py -d 00:A0:B0:C0:D0
-
-# Optional: edit dsx-daemon.toml for default settings
+python3 dsx-daemon.py                        # default 127.0.0.1:6969
+python3 dsx-daemon.py -v                     # verbose
+python3 -m dsx_daemon                        # same thing
+python3 dsx-daemon.py -d 00:A0:B0:C0:D0      # specific controller
 ```
 
-## Configuration
+Edit `dsx-daemon.toml` to change defaults (CLI flags override the
+file).
 
-Edit `dsx-daemon.toml` to set defaults:
+## Trigger mode mapping
 
-```toml
-[daemon]
-bind = "127.0.0.1"
-port = 6969
-# device = "00:A0:B0:C0:D0"
-dry_run = false
-log_level = "INFO"
-```
-
-Command-line arguments override values from the config file.
-
-## DSX to dualsensectl trigger mode mapping
-
-| DSX Mode | Name | dualsensectl command |
-|----------|------|---------------------|
-| 0 | Normal/Off | `trigger off` |
+| DSX | Name | dualsensectl |
+|-----|------|--------------|
+| 0 | Off | `trigger off` |
 | 1 | GameCube | `feedback 2 3` |
 | 2 | VerySoft | `feedback 0 2` |
 | 3 | Soft | `feedback 0 3` |
@@ -122,7 +98,7 @@ Command-line arguments override values from the config file.
 | 9 | Choppy | `vibration 0 8 8` |
 | 10 | Medium | `feedback 0 5` |
 | 11 | VibrateTriggerPulse | `vibration 0 8 4` |
-| 12 | CustomTriggerValue | varies (off/feedback/vibration) |
+| 12 | CustomTriggerValue | varies |
 | 13 | Resistance | `feedback pos str` |
 | 14 | Bow | `bow start stop str snap` |
 | 15 | Galloping | `galloping start stop f1 f2 freq` |
@@ -132,4 +108,6 @@ Command-line arguments override values from the config file.
 
 ## Tuning
 
-Edit `DSXSkyrimConfig.json` in `<game>/Data/SKSE/Plugins/DSXSkyrim/` to tweak trigger effects per weapon category. See the [DSXSkyrimConfigDocumentation](https://github.com/dvize/DSXSkyrim-NG/blob/master/DSXSkyrimConfigDocumentation.html) for all available fields.
+Edit `DSXSkyrimConfig.json` (next to the DLL) to tweak per-weapon
+trigger effects.  See the
+[config docs](https://github.com/dvize/DSXSkyrim-NG/blob/master/DSXSkyrimConfigDocumentation.html).
