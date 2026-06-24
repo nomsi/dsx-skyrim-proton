@@ -107,6 +107,7 @@ file).
 
 ## Tuning
 
-Edit `DSXSkyrimConfig.json` (next to the DLL) to tweak per-weapon
-trigger effects.  See the
+Copy `DSXSkyrimConfig.example.json` from this repo into the DSXSkyrim
+plugin folder as `DSXSkyrimConfig.json` and tweak the trigger modes
+to your liking.  The full fields reference is in the
 [config docs](https://github.com/dvize/DSXSkyrim-NG/blob/master/DSXSkyrimConfigDocumentation.html).
