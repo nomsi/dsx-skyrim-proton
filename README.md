@@ -43,8 +43,8 @@ dsx_daemon/
 
 - Skyrim Anniversary Edition (or SE) under Proton/Wine
 - SKSE64 + Address Library
-- DSXSkyrim-NG (install in `Data/SKSE/Plugins/DSXSkyrim/`)
-- [dualsensectl](https://github.com/nowrep/dualsensectl) on PATH
+- DSXSkyrim-NG (install with your mod manager)
+- [dualsensectl](https://github.com/nowrep/dualsensectl) installed on PATH (see below)
 - Python 3.10+
 - DualSense controller (USB or Bluetooth)
 
@@ -61,14 +61,9 @@ dualsensectl battery          # verify
 
 ### DSXSkyrim-NG
 
-Extract `DSXSkyrimNG.7z` into the game's `Data` directory.
-Expected layout:
-
-```
-<pfx>/drive_c/.../Skyrim Anniversary Edition/Data/SKSE/Plugins/DSXSkyrim/
-  ├── DSXSkyrimNG.dll
-  └── DSXSkyrim/DSXSkyrimConfig.json
-```
+Use your mod manager to install `DSXSkyrimNG.7z` like any other SKSE
+plugin.  The relevant files end up in
+`Data/SKSE/Plugins/DSXSkyrim/`.
 
 ### Run
 
@@ -78,6 +73,10 @@ python3 dsx-daemon.py -v                     # verbose
 python3 -m dsx_daemon                        # same thing
 python3 dsx-daemon.py -d 00:A0:B0:C0:D0      # specific controller
 ```
+
+Start the daemon before launching the game.  Hit Ctrl+C (or send
+SIGTERM) to stop — it resets the controller triggers and LEDs
+automatically.
 
 Edit `dsx-daemon.toml` to change defaults (CLI flags override the
 file).

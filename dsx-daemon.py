@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Linux DSX protocol receiver for DualSense controllers."""
 
 from dsx_daemon.cli import main
 
-main()
+if __name__ == "__main__":
+    main()
