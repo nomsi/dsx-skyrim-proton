@@ -1,9 +1,3 @@
-"""UDP server that receives DSX protocol packets and dispatches them.
-
-Listens for JSON-encoded DSX packets on a configurable address/port
-and forwards them through the translator and controller pipeline.
-"""
-
 import json
 import logging
 import socket
@@ -17,12 +11,7 @@ log = logging.getLogger("dsx-daemon")
 
 
 def run_server(bind: str, port: int, dsctl: DualSenseCtl) -> None:
-    """Start the UDP receive loop.
-
-    :param bind: IP address to bind to (e.g. ``"127.0.0.1"``).
-    :param port: UDP port number.
-    :param dsctl: Initialised DualSenseCtl instance.
-    """
+    """UDP receive loop — receives JSON packets and dispatches to DualSenseCtl."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:

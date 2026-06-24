@@ -1,12 +1,3 @@
-"""Translate DSX protocol instructions into dualsensectl command lists.
-
-Each translate_* function receives an Instruction and returns a list of
-argument lists (e.g. [["trigger", "left", "off"], ...]) that the
-DualSenseCtl wrapper can execute.
-"""
-
-from __future__ import annotations
-
 import logging
 from typing import Callable
 
@@ -15,6 +6,7 @@ from dsx_daemon.packet import (
     Instruction,
     InstructionType,
     MicLEDMode,
+    Packet,
     PlayerLEDMode,
     TriggerMode,
 )
@@ -25,12 +17,10 @@ _TRIGGER_SIDE = {"1": "left", "2": "right"}
 
 
 def _side(raw: str) -> str:
-    """Convert a DSX trigger-side string to a dualsensectl side name."""
     return _TRIGGER_SIDE.get(raw, raw)
 
 
 def _clamp(value: int, lo: int = 0, hi: int = 8) -> int:
-    """Clamp value to the inclusive range [lo, hi]."""
     return max(lo, min(hi, value))
 
 
@@ -46,10 +36,7 @@ _PRESET_MAP: dict[int, tuple[int, int]] = {
 
 
 def translate_trigger_update(inst: Instruction) -> list[list[str]]:
-    """Handle an InstructionType.TriggerUpdate.
-
-    Parameters: [controllerIdx, triggerSide, triggerMode, extraParams...]
-    """
+    """Parameters: [controllerIdx, triggerSide, triggerMode, extra...]"""
     params = inst.parameters
     if len(params) < 3:
         log.warning("TriggerUpdate: too few parameters: %s", params)
@@ -154,10 +141,7 @@ def translate_trigger_update(inst: Instruction) -> list[list[str]]:
 def _translate_custom_trigger_value(
     side: str, extra: list[str]
 ) -> list[list[str]]:
-    """Translate CustomTriggerValue (mode 12) sub-modes.
-
-    Parameters: [customTriggerValueMode, p0, p1, p2]
-    """
+    """Parameters: [customTriggerValueMode, p0, p1]"""
     cv_mode = int(extra[0]) if extra else 0
     p0 = int(extra[1]) if len(extra) > 1 else 0
     p1 = int(extra[2]) if len(extra) > 2 else 0
@@ -179,10 +163,7 @@ def _translate_custom_trigger_value(
 
 
 def translate_rgb_update(inst: Instruction) -> list[list[str]]:
-    """Handle an InstructionType.RGBUpdate.
-
-    Parameters: [controllerIdx, r, g, b, brightness]
-    """
+    """Parameters: [controllerIdx, r, g, b, brightness]"""
     params = inst.parameters
     if len(params) < 5:
         log.warning("RGBUpdate: too few parameters: %s", params)
@@ -191,10 +172,7 @@ def translate_rgb_update(inst: Instruction) -> list[list[str]]:
 
 
 def translate_player_led(inst: Instruction) -> list[list[str]]:
-    """Handle an InstructionType.PlayerLEDNewRevision.
-
-    Parameters: [controllerIdx, ledMode]
-    """
+    """Parameters: [controllerIdx, ledMode]"""
     params = inst.parameters
     led_val = int(params[1]) if len(params) > 1 else 5
     if led_val == PlayerLEDMode.AllOff:
@@ -205,10 +183,7 @@ def translate_player_led(inst: Instruction) -> list[list[str]]:
 
 
 def translate_mic_led(inst: Instruction) -> list[list[str]]:
-    """Handle an InstructionType.MicLED.
-
-    Parameters: [controllerIdx, mode]
-    """
+    """Parameters: [controllerIdx, mode]"""
     params = inst.parameters
     mic_mode = int(params[1]) if len(params) > 1 else 2
     state = {MicLEDMode.On: "on", MicLEDMode.Pulse: "pulse", MicLEDMode.Off: "off"}.get(
@@ -218,10 +193,6 @@ def translate_mic_led(inst: Instruction) -> list[list[str]]:
 
 
 def translate_reset(_inst: Instruction) -> list[list[str]]:
-    """Handle InstructionType.ResetToUserSettings.
-
-    Returns commands to neutralise all controller features.
-    """
     return [
         ["trigger", "left", "off"],
         ["trigger", "right", "off"],
@@ -241,12 +212,7 @@ _INSTRUCTION_DISPATCH: dict[int, Callable[[Instruction], list[list[str]]]] = {
 }
 
 
-def translate_packet(packet) -> list[list[str]]:
-    """Translate every instruction in a packet into CLI command lists.
-
-    :param packet: A Packet instance from dsx_daemon.packet.
-    :return: A flat list of argument lists, one per dualsensectl invocation.
-    """
+def translate_packet(packet: Packet) -> list[list[str]]:
     commands: list[list[str]] = []
     for inst in packet.instructions:
         handler = _INSTRUCTION_DISPATCH.get(inst.type)

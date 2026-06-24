@@ -1,7 +1,6 @@
 """DSX network protocol data models.
 
-These types mirror the definitions in DSXController.hpp
-and represent the JSON packets that DSXSkyrim-NG sends over UDP.
+Mirrors the types in DSXController.hpp.
 """
 
 from dataclasses import dataclass, field
@@ -10,7 +9,7 @@ from typing import Any
 
 
 class TriggerMode(IntEnum):
-    """Maps to the DSX ``TriggerMode`` enum (0..18)."""
+    """DSX trigger effect modes (0..18)."""
 
     Normal = 0
     GameCube = 1
@@ -34,7 +33,7 @@ class TriggerMode(IntEnum):
 
 
 class CustomTriggerValueMode(IntEnum):
-    """Sub-mode for ``TriggerMode.CustomTriggerValue`` (mode 12)."""
+    """Sub-mode for CustomTriggerValue (mode 12)."""
 
     OFF = 0
     Rigid = 1
@@ -48,7 +47,7 @@ class CustomTriggerValueMode(IntEnum):
 
 
 class InstructionType(IntEnum):
-    """The ``type`` field in a DSX JSON instruction."""
+    """DSX instruction type identifiers."""
 
     GetDSXStatus = 0
     TriggerUpdate = 1
@@ -60,7 +59,7 @@ class InstructionType(IntEnum):
 
 
 class PlayerLEDMode(IntEnum):
-    """Player LED brightness patterns matching DSX ``PlayerLEDNewRevision``."""
+    """Player LED brightness settings."""
 
     One = 0
     Two = 1
@@ -71,7 +70,7 @@ class PlayerLEDMode(IntEnum):
 
 
 class MicLEDMode(IntEnum):
-    """Microphone LED state."""
+    """Microphone LED states."""
 
     On = 0
     Pulse = 1
@@ -80,38 +79,22 @@ class MicLEDMode(IntEnum):
 
 @dataclass
 class Instruction:
-    """A single DSX protocol instruction.
-
-    :param type: The ``InstructionType`` value.
-    :param parameters: String-form parameters whose meaning depends on *type*.
-    """
-
     type: int
     parameters: list[str] = field(default_factory=list)
 
 
 @dataclass
 class Packet:
-    """A complete DSX protocol packet containing zero or more instructions.
-
-    :param instructions: Ordered list of instructions to execute.
-    """
-
     instructions: list[Instruction] = field(default_factory=list)
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> Packet:
-        """Parse a deserialized JSON dict into a ``Packet``.
-
-        :param data: The JSON object as returned by ``json.loads``.
-        :return: A new ``Packet`` with all fields populated.
-        """
         pkt = cls()
         for raw in data.get("instructions", []):
             pkt.instructions.append(
                 Instruction(
-                    type=int(raw.get("type", 0)),
-                    parameters=[str(p) for p in raw.get("parameters", [])],
+                    type=raw.get("type", 0),
+                    parameters=list(raw.get("parameters", [])),
                 )
             )
         return pkt
