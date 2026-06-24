@@ -22,20 +22,33 @@ Skyrim AE (Proton/Wine)
 
 The SKSE plugin detects item equips in Skyrim and sends JSON packets describing the desired trigger effects over UDP. On Windows, DSX receives these and talks to the controller. On Linux, `dsx-daemon.py` receives them and runs `dualsensectl` instead.
 
+## Project structure
+
+```
+dsx-daemon.py          # Entry-point shim
+dsx-daemon.toml        # User configuration
+dsx_daemon/
+  __init__.py          # Package version
+  __main__.py          # python -m dsx_daemon support
+  packet.py            # DSX protocol data models (enums, dataclasses)
+  dualsense.py         # DualSenseCtl wrapper around dualsensectl binary
+  translator.py        # DSX mode to dualsensectl command mapping
+  server.py            # UDP receive loop
+  cli.py               # Argument parsing and main entry point
+```
+
 ## Requirements
 
 - **Skyrim Anniversary Edition** (or SE) running under **Proton** (or Wine)
 - **SKSE64** + Address Library for your Skyrim version
-- **DSXSkyrim-NG.7z** — get it from the [DSXSkyrim-NG releases](https://github.com/dvize/DSXSkyrim-NG/releases) (or build from source)
+- **DSXSkyrim-NG.7z** from the [DSXSkyrim-NG releases](https://github.com/dvize/DSXSkyrim-NG/releases)
 - **dualsensectl** — install from your distro or build from [source](https://github.com/nowrep/dualsensectl)
-- **Python 3.10+** (or any recent Python 3)
+- **Python 3.10+**
 - **DualSense controller** (PS5) — connected via USB or Bluetooth
 
 ## Installation
 
 ### 1. Install dualsensectl
-
-On Gentoo you likely already have it. Otherwise:
 
 ```bash
 # From source:
@@ -48,12 +61,10 @@ Verify it works:
 ```bash
 dualsensectl battery
 ```
-If you get a permission error, install the udev rules from the dualsensectl repo.
 
 ### 2. Install DSXSkyrim-NG for Skyrim
 
-Extract `DSXSkyrimNG.7z` into your Skyrim `Data` directory. The file layout inside
-Proton's wine prefix should look like:
+Extract `DSXSkyrimNG.7z` into your Skyrim `Data` directory. The file layout inside Proton's wine prefix should look like:
 
 ```
 "<pfx>/drive_c/Program Files (x86)/Steam/steamapps/common/Skyrim Anniversary Edition/Data/SKSE/Plugins/DSXSkyrim/"
@@ -61,54 +72,50 @@ Proton's wine prefix should look like:
   └── DSXSkyrim/DSXSkyrimConfig.json
 ```
 
-Or inside `Data/` if your mod manager places files there. The plugin auto-detects both layouts.
-
-### 3. (Optional) Proton networking fix
-
-Wine/Proton can access `127.0.0.1` by default, but some Proton versions restrict UDP.
-If the game sends packets but the daemon doesn't receive them, add this to your game's
-launch options (in Steam):
-
-```
-WINEDLLOVERRIDES="winedevice.exe=d" %command%
-```
-
-Or ensure `winecfg` has `win10` as the Windows version.
-
-### 4. Run the daemon
+### 3. Run the daemon
 
 ```bash
-# Start before launching the game, or in a terminal/tmux/screen:
-python3 /path/to/dsx-daemon.py
+# Start before launching the game:
+python3 dsx-daemon.py
 
 # With verbose logging:
-python3 /path/to/dsx-daemon.py -v
+python3 dsx-daemon.py -v
+
+# Or via python -m:
+python3 -m dsx_daemon
 
 # If you have multiple controllers, specify by serial:
 dualsensectl -l                     # list devices
-python3 /path/to/dsx-daemon.py -d 00:A0:B0:C0:D0
+python3 dsx-daemon.py -d 00:A0:B0:C0:D0
+
+# Optional: edit dsx-daemon.toml for default settings
 ```
 
-Add it to your autostart or launch it alongside Steam.
+## Configuration
 
-## Usage
+Edit `dsx-daemon.toml` to set defaults:
 
-1. Connect your DualSense controller
-2. Start `dsx-daemon.py`
-3. Launch Skyrim AE via Proton
+```toml
+[daemon]
+bind = "127.0.0.1"
+port = 6969
+# device = "00:A0:B0:C0:D0"
+dry_run = false
+log_level = "INFO"
+```
 
-That's it. The daemon will log when it receives packets and which `dualsensectl` commands it runs.
+Command-line arguments override values from the config file.
 
-## DSX → dualsensectl trigger mode mapping
+## DSX to dualsensectl trigger mode mapping
 
 | DSX Mode | Name | dualsensectl command |
 |----------|------|---------------------|
 | 0 | Normal/Off | `trigger off` |
-| 1 | GameCube | `feedback 0 1` |
+| 1 | GameCube | `feedback 2 3` |
 | 2 | VerySoft | `feedback 0 2` |
 | 3 | Soft | `feedback 0 3` |
-| 4 | Hard | `feedback 0 4` |
-| 5 | VeryHard | `feedback 0 6` |
+| 4 | Hard | `feedback 0 5` |
+| 5 | VeryHard | `feedback 0 7` |
 | 6 | Hardest | `feedback 0 8` |
 | 7 | Rigid | `feedback 0 8` |
 | 8 | VibrateTrigger | `vibration 0 4 4` |
@@ -125,6 +132,4 @@ That's it. The daemon will log when it receives packets and which `dualsensectl`
 
 ## Tuning
 
-Edit `DSXSkyrimConfig.json` in `<game>/Data/SKSE/Plugins/DSXSkyrim/` to tweak
-trigger effects per weapon category. See the original [DSXSkyrimConfigDocumentation.html](https://github.com/dvize/DSXSkyrim-NG/blob/master/DSXSkyrimConfigDocumentation.html)
-for all available fields.
+Edit `DSXSkyrimConfig.json` in `<game>/Data/SKSE/Plugins/DSXSkyrim/` to tweak trigger effects per weapon category. See the [DSXSkyrimConfigDocumentation](https://github.com/dvize/DSXSkyrim-NG/blob/master/DSXSkyrimConfigDocumentation.html) for all available fields.

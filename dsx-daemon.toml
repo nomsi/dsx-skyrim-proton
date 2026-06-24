@@ -1,0 +1,17 @@
+# dsx-daemon configuration
+# Path: dsx-daemon.toml
+
+[daemon]
+# Bind address and port for the UDP listener
+bind = "127.0.0.1"
+port = 6969
+
+# DualSense controller serial number (optional).
+# If unset, dualsensectl uses the first available controller.
+# device = "00:A0:B0:C0:D0"
+
+# Dry-run mode: log commands without executing them
+dry_run = false
+
+# Log level: DEBUG, INFO, WARNING, ERROR
+log_level = "INFO"
