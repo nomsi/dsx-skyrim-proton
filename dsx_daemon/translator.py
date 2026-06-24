@@ -186,10 +186,12 @@ def translate_mic_led(inst: Instruction) -> list[list[str]]:
     """Parameters: [controllerIdx, mode]"""
     params = inst.parameters
     mic_mode = int(params[1]) if len(params) > 1 else 2
-    state = {MicLEDMode.On: "on", MicLEDMode.Pulse: "pulse", MicLEDMode.Off: "off"}.get(
-        mic_mode, "off"
-    )
-    return [["microphone-led", state]]
+    _mic_states: dict[int, str] = {
+        MicLEDMode.On: "on",
+        MicLEDMode.Pulse: "pulse",
+        MicLEDMode.Off: "off",
+    }
+    return [["microphone-led", _mic_states.get(mic_mode, "off")]]
 
 
 def translate_reset(_inst: Instruction) -> list[list[str]]:
@@ -202,9 +204,14 @@ def translate_reset(_inst: Instruction) -> list[list[str]]:
     ]
 
 
+def _noop_trigger_threshold(_inst: Instruction) -> list[list[str]]:
+    log.debug("TriggerThreshold not implemented, ignored")
+    return []
+
+
 _INSTRUCTION_DISPATCH: dict[int, Callable[[Instruction], list[list[str]]]] = {
     InstructionType.TriggerUpdate: translate_trigger_update,
-    InstructionType.TriggerThreshold: lambda _: [],
+    InstructionType.TriggerThreshold: _noop_trigger_threshold,
     InstructionType.RGBUpdate: translate_rgb_update,
     InstructionType.PlayerLEDNewRevision: translate_player_led,
     InstructionType.MicLED: translate_mic_led,
